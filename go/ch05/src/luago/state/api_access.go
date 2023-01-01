@@ -1,22 +1,22 @@
 /*
- *该脚本是luago/api/lua_state.go里的接口的具体实现
- *主要实现：栈访问方法 (stack -> Go)
- 	TypeName(tp LuaType) string
-	Type(idx int) LuaType
-	IsNone(idx int) bool
-	IsNil(idx int) bool
-	IsNoneOrNil(idx int) bool
-	IsBoolean(idx int) bool
-	IsInteger(idx int) bool
-	IsNumber(idx int) bool
-	IsString(idx int) bool
-	ToBoolean(idx int) bool
-	ToInteger(idx int) int64
-	ToIntegerX(idx int) (int64, bool)
-	ToNumber(idx int) float64
-	ToNumberX(idx int) (float64, bool)
-	ToString(idx int) string
-	ToStringX(idx int) (string, bool)
+	 *该脚本是luago/api/lua_state.go里的接口的具体实现
+	 *主要实现：栈访问方法 (stack -> Go)
+	 	TypeName(tp LuaType) string
+		Type(idx int) LuaType
+		IsNone(idx int) bool
+		IsNil(idx int) bool
+		IsNoneOrNil(idx int) bool
+		IsBoolean(idx int) bool
+		IsInteger(idx int) bool
+		IsNumber(idx int) bool
+		IsString(idx int) bool
+		ToBoolean(idx int) bool
+		ToInteger(idx int) int64
+		ToIntegerX(idx int) (int64, bool)
+		ToNumber(idx int) float64
+		ToNumberX(idx int) (float64, bool)
+		ToString(idx int) string
+		ToStringX(idx int) (string, bool)
 */
 package state
 
@@ -48,7 +48,7 @@ func (self *luaState) TypeName(tp LuaType) string {
 	}
 }
 
-//根据索引返回值的类型，如果索引无效，则返回LUA_TNONE
+// 根据索引返回值的类型，如果索引无效，则返回LUA_TNONE
 func (self *luaState) Type(idx int) LuaType {
 	if self.stack.isValid(idx) {
 		val := self.stack.get(idx)
@@ -73,26 +73,26 @@ func (self *luaState) IsBoolean(idx int) bool {
 	return self.Type(idx) == LUA_TBOOLEAN
 }
 
-//判断给定索引处的值是否是字符串（或是数字）
+// 判断给定索引处的值是否是字符串（或是数字）
 func (self *luaState) IsString(idx int) bool {
 	t := self.Type(idx)
 	return t == LUA_TSTRING || t == LUA_TNUMBER
 }
 
-//判断给定索引处的值是否是（或者可以转换为）数字类型
+// 判断给定索引处的值是否是（或者可以转换为）数字类型
 func (self *luaState) IsNumber(idx int) bool {
 	_, ok := self.ToNumberX(idx)
 	return ok
 }
 
-//判断给定索引处的值是否是整数类型
+// 判断给定索引处的值是否是整数类型
 func (self *luaState) IsInteger(idx int) bool {
 	val := self.stack.get(idx)
 	_, ok := val.(int64)
 	return ok
 }
 
-//从指定索引处取出一个布尔值，如果值不是布尔类型，则需要进行类型转换
+// 从指定索引处取出一个布尔值，如果值不是布尔类型，则需要进行类型转换
 func (self *luaState) ToBoolean(idx int) bool {
 	val := self.stack.get(idx)
 	return convertToBoolean(val)
@@ -103,17 +103,10 @@ func (self *luaState) ToNumber(idx int) float64 {
 	return n
 }
 
-//将值转换为数字类型，如果值不是数字类型并且也没办法转换成数字类型，则返回0
+// 将值转换为数字类型，如果值不是数字类型并且也没办法转换成数字类型，则返回0
 func (self *luaState) ToNumberX(idx int) (float64, bool) {
 	val := self.stack.get(idx)
-	switch x := val.(type) {
-	case float64:
-		return x, true
-	case int64:
-		return float64(x), true
-	default:
-		return 0, false
-	}
+	return convertToFloat(val)
 }
 
 func (self *luaState) ToInteger(idx int) int64 {
@@ -123,8 +116,7 @@ func (self *luaState) ToInteger(idx int) int64 {
 
 func (self *luaState) ToIntegerX(idx int) (int64, bool) {
 	val := self.stack.get(idx)
-	i, ok := val.(int64)
-	return i, ok
+	return convertToInteger(val)
 }
 
 func (self *luaState) ToString(idx int) string {

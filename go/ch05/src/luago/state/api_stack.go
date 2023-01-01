@@ -1,17 +1,17 @@
 /*
- *该脚本是luago/api/lua_state.go里的接口的具体实现
- *主要实现：基础栈操作方法
- 	GetTop() int
-	AbsIndex(idx int) int
-	CheckStack(n int) bool
-	Pop(n int)
-	Copy(fromIdx, toIdx int)
-	PushValue(idx int)
-	Replace(idx int)
-	Insert(idx int)
-	Remove(idx int)
-	Rotate(idx, n int)
-	SetTop(idx int)
+	 *该脚本是luago/api/lua_state.go里的接口的具体实现
+	 *主要实现：基础栈操作方法
+	 	GetTop() int
+		AbsIndex(idx int) int
+		CheckStack(n int) bool
+		Pop(n int)
+		Copy(fromIdx, toIdx int)
+		PushValue(idx int)
+		Replace(idx int)
+		Insert(idx int)
+		Remove(idx int)
+		Rotate(idx, n int)
+		SetTop(idx int)
 */
 package state
 

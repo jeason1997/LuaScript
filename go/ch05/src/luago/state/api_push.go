@@ -1,11 +1,11 @@
 /*
- *该脚本是luago/api/lua_state.go里的接口的具体实现
- *主要实现：压栈方法 (Go -> stack)
- 	PushNil()
-	PushBoolean(b bool)
-	PushInteger(n int64)
-	PushNumber(n float64)
-	PushString(s string)
+	 *该脚本是luago/api/lua_state.go里的接口的具体实现
+	 *主要实现：压栈方法 (Go -> stack)
+	 	PushNil()
+		PushBoolean(b bool)
+		PushInteger(n int64)
+		PushNumber(n float64)
+		PushString(s string)
 */
 package state
 

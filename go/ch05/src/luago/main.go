@@ -12,7 +12,9 @@ func main() {
 		case "1":
 			test_luac()
 		case "2":
-			test_stack()
+			test.TestStack()
+		case "3":
+			test.TestArith()
 		}
 	}
 }
@@ -27,8 +29,4 @@ func test_luac() {
 
 		test.TestUndump(data)
 	}
-}
-
-func test_stack() {
-	test.TestStack()
 }
