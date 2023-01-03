@@ -1,4 +1,4 @@
-//测试栈
+// 测试栈
 package test
 
 import (
@@ -8,7 +8,7 @@ import (
 )
 
 func TestStack() {
-	ls := state.New()
+	ls := state.New(20, nil)
 	ls.PushBoolean(true)
 	printStack(ls)
 	ls.PushInteger(10)

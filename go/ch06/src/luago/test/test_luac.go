@@ -1,4 +1,4 @@
-//测试加载并解析luac文件
+// 测试加载并解析luac文件
 package test
 
 import (
@@ -101,14 +101,17 @@ func upvalName(f *binchunk.Prototype, idx int) string {
 func printOperands(i Instruction) {
 	switch i.OpMode() {
 	case IABC:
+		//IABC允许的操作数类型有：OpArgU、OpArgR、OpArgK
 		a, b, c := i.ABC()
 
 		fmt.Printf("%d", a)
 		if i.BMode() != OpArgN {
 			//如果操作数B或C的最高位是1就认为它表示常量表索引，按负数输出，否则表示寄存器索引
 			if b > 0xFF {
+				//OpArgK的常量索引模式
 				fmt.Printf(" %d", -1-b&0xFF)
 			} else {
+				//OpArgU或者OpArgR或者OpArgK的寄存器索引模式
 				fmt.Printf(" %d", b)
 			}
 		}
@@ -120,16 +123,21 @@ func printOperands(i Instruction) {
 			}
 		}
 	case IABx:
+		//IABx允许的操作数类型有：OpArgU、OpArgK
 		a, bx := i.ABx()
 
 		fmt.Printf("%d", a)
 		if i.BMode() == OpArgK {
+			//OpArgK的常量索引模式
 			fmt.Printf(" %d", -1-bx)
 		} else if i.BMode() == OpArgU {
+			//OpArgU
 			fmt.Printf(" %d", bx)
 		}
 	case IAsBx:
+		//IAsBx允许的操作数类型有：OpArgR
 		a, sbx := i.AsBx()
+		//OpArgR的跳转偏移模式
 		fmt.Printf("%d %d", a, sbx)
 	case IAx:
 		ax := i.Ax()
