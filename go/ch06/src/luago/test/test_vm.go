@@ -16,6 +16,12 @@ func TestVM(data []byte) {
 	ls := state.New(nRegs+8, proto)
 	//调用SetTop()方法在栈里预留出寄存器空间，剩余栈空间留给指令实现函数使用
 	ls.SetTop(nRegs)
+	/*
+	*一个运行于虚拟机的正常栈，里面的结构应该是，底部是程序预留的寄存器（编译时自动计算最多需要多少个寄存器Prototype.MaxStackSize）。
+	*上面剩余的是计算用到的栈空间，一般会预留几个。然后初始时栈顶索引是位于寄存器上面的，也就是计算栈的初始位置。
+	*slots = [reg1][reg2][reg3][stack1][stack2][...]
+	*top = 4
+	 */
 
 	for {
 		pc := ls.PC()

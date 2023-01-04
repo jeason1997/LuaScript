@@ -18,7 +18,7 @@ func loadNil(i Instruction, vm LuaVM) {
 	a += 1
 
 	//假定虚拟机在执行第一条指令前，已经预先算好执行阶段所需要的寄存器数量，调用SetTop()方法保留了必要数量的栈空间
-	//先调用PushNil()方法往栈顶推入一个nil值，然后连续调用Copy()方法将nil值复制到指定寄存器中，
+	//先调用PushNil()方法往栈顶推入一个nil值，然后连续调用Copy()方法将该nil值复制到指定寄存器中，
 	//最后调用Pop()方法把一开始推入栈顶的那个nil值弹出，让栈顶指针恢复原状
 	vm.PushNil()
 	for i := a; i <= a+b; i++ {

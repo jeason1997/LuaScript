@@ -10,6 +10,12 @@ package state
  *可接受索引：位于[1, n]区间的叫可接受索引
  */
 
+/*
+ *一个运行于虚拟机的正常栈，里面的结构应该是，底部是程序预留的寄存器（编译时自动计算最多需要多少个寄存器Prototype.MaxStackSize）。
+ *上面剩余的是计算用到的栈空间，一般会预留几个。然后初始时栈顶索引是位于寄存器上面的，也就是计算栈的初始位置。
+ *slots = [reg1][reg2][reg3][stack1][stack2][...]
+ *top = 4
+ */
 type luaStack struct {
 	slots []luaValue
 	top   int //栈顶索引，Lua从1开始
