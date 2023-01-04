@@ -1,4 +1,4 @@
-// 测试加载并解析luac文件
+// 测试虚拟机运算操作
 package test
 
 import (

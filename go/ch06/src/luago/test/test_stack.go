@@ -1,4 +1,4 @@
-// 测试栈
+// 测试虚拟机栈操作
 package test
 
 import (

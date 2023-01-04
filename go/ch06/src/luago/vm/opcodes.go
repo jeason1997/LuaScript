@@ -1,5 +1,7 @@
 package vm
 
+import "luago/api"
+
 //编码模式
 const (
 	IABC  = iota //iABC模式的指令可以携带A、B、C三个操作数，分别占用8、9、9个比特
@@ -75,56 +77,57 @@ type opcode struct {
 	argCMode byte // C arg mode
 	opMode   byte // op mode
 	name     string
+	action   func(i Instruction, vm api.LuaVM)
 }
 
 //指令集合，与操作码一一对应
 var opcodes = []opcode{
-	/*     T  A  B    	 C       mode  name     */
-	opcode{0, 1, OpArgR, OpArgN, IABC, "MOVE     "},
-	opcode{0, 1, OpArgK, OpArgN, IABx, "LOADK    "},
-	opcode{0, 1, OpArgN, OpArgN, IABx, "LOADKX  "},
-	opcode{0, 1, OpArgU, OpArgU, IABC, "LOADBOOL"},
-	opcode{0, 1, OpArgU, OpArgN, IABC, "LOADNIL "},
-	opcode{0, 1, OpArgU, OpArgN, IABC, "GETUPVAL"},
-	opcode{0, 1, OpArgU, OpArgK, IABC, "GETTABUP"},
-	opcode{0, 1, OpArgR, OpArgK, IABC, "GETTABLE"},
-	opcode{0, 0, OpArgK, OpArgK, IABC, "SETTABUP"},
-	opcode{0, 0, OpArgU, OpArgN, IABC, "SETUPVAL"},
-	opcode{0, 0, OpArgK, OpArgK, IABC, "SETTABLE"},
-	opcode{0, 1, OpArgU, OpArgU, IABC, "NEWTABLE"},
-	opcode{0, 1, OpArgR, OpArgK, IABC, "SELF     "},
-	opcode{0, 1, OpArgK, OpArgK, IABC, "ADD      "},
-	opcode{0, 1, OpArgK, OpArgK, IABC, "SUB      "},
-	opcode{0, 1, OpArgK, OpArgK, IABC, "MUL      "},
-	opcode{0, 1, OpArgK, OpArgK, IABC, "MOD      "},
-	opcode{0, 1, OpArgK, OpArgK, IABC, "POW      "},
-	opcode{0, 1, OpArgK, OpArgK, IABC, "DIV      "},
-	opcode{0, 1, OpArgK, OpArgK, IABC, "IDIV     "},
-	opcode{0, 1, OpArgK, OpArgK, IABC, "BAND     "},
-	opcode{0, 1, OpArgK, OpArgK, IABC, "BOR      "},
-	opcode{0, 1, OpArgK, OpArgK, IABC, "BXOR     "},
-	opcode{0, 1, OpArgK, OpArgK, IABC, "SHL      "},
-	opcode{0, 1, OpArgK, OpArgK, IABC, "SHR      "},
-	opcode{0, 1, OpArgR, OpArgN, IABC, "UNM      "},
-	opcode{0, 1, OpArgR, OpArgN, IABC, "BNOT     "},
-	opcode{0, 1, OpArgR, OpArgN, IABC, "NOT      "},
-	opcode{0, 1, OpArgR, OpArgN, IABC, "LEN      "},
-	opcode{0, 1, OpArgR, OpArgR, IABC, "CONCAT  "},
-	opcode{0, 0, OpArgR, OpArgN, IAsBx, "JMP      "},
-	opcode{1, 0, OpArgK, OpArgK, IABC, "EQ       "},
-	opcode{1, 0, OpArgK, OpArgK, IABC, "LT       "},
-	opcode{1, 0, OpArgK, OpArgK, IABC, "LE       "},
-	opcode{1, 0, OpArgN, OpArgU, IABC, "TEST     "},
-	opcode{1, 1, OpArgR, OpArgU, IABC, "TESTSET "},
-	opcode{0, 1, OpArgU, OpArgU, IABC, "CALL     "},
-	opcode{0, 1, OpArgU, OpArgU, IABC, "TAILCALL"},
-	opcode{0, 0, OpArgU, OpArgN, IABC, "RETURN  "},
-	opcode{0, 1, OpArgR, OpArgN, IAsBx, "FORLOOP "},
-	opcode{0, 1, OpArgR, OpArgN, IAsBx, "FORPREP "},
-	opcode{0, 0, OpArgN, OpArgU, IABC, "TFORCALL"},
-	opcode{0, 1, OpArgR, OpArgN, IAsBx, "TFORLOOP"},
-	opcode{0, 0, OpArgU, OpArgU, IABC, "SETLIST "},
-	opcode{0, 1, OpArgU, OpArgN, IABx, "CLOSURE "},
-	opcode{0, 1, OpArgU, OpArgN, IABC, "VARARG  "},
-	opcode{0, 0, OpArgU, OpArgU, IAx, "EXTRAARG"},
+	/*     T  A    B       C     mode         name       action */
+	opcode{0, 1, OpArgR, OpArgN, IABC /* */, "MOVE    ", move},     // R(A) := R(B)
+	opcode{0, 1, OpArgK, OpArgN, IABx /* */, "LOADK   ", loadK},    // R(A) := Kst(Bx)
+	opcode{0, 1, OpArgN, OpArgN, IABx /* */, "LOADKX  ", loadKx},   // R(A) := Kst(extra arg)
+	opcode{0, 1, OpArgU, OpArgU, IABC /* */, "LOADBOOL", loadBool}, // R(A) := (bool)B; if (C) pc++
+	opcode{0, 1, OpArgU, OpArgN, IABC /* */, "LOADNIL ", loadNil},  // R(A), R(A+1), ..., R(A+B) := nil
+	opcode{0, 1, OpArgU, OpArgN, IABC /* */, "GETUPVAL", nil},      // R(A) := UpValue[B]
+	opcode{0, 1, OpArgU, OpArgK, IABC /* */, "GETTABUP", nil},      // R(A) := UpValue[B][RK(C)]
+	opcode{0, 1, OpArgR, OpArgK, IABC /* */, "GETTABLE", nil},      // R(A) := R(B)[RK(C)]
+	opcode{0, 0, OpArgK, OpArgK, IABC /* */, "SETTABUP", nil},      // UpValue[A][RK(B)] := RK(C)
+	opcode{0, 0, OpArgU, OpArgN, IABC /* */, "SETUPVAL", nil},      // UpValue[B] := R(A)
+	opcode{0, 0, OpArgK, OpArgK, IABC /* */, "SETTABLE", nil},      // R(A)[RK(B)] := RK(C)
+	opcode{0, 1, OpArgU, OpArgU, IABC /* */, "NEWTABLE", nil},      // R(A) := {} (size = B,C)
+	opcode{0, 1, OpArgR, OpArgK, IABC /* */, "SELF    ", nil},      // R(A+1) := R(B); R(A) := R(B)[RK(C)]
+	opcode{0, 1, OpArgK, OpArgK, IABC /* */, "ADD     ", add},      // R(A) := RK(B) + RK(C)
+	opcode{0, 1, OpArgK, OpArgK, IABC /* */, "SUB     ", sub},      // R(A) := RK(B) - RK(C)
+	opcode{0, 1, OpArgK, OpArgK, IABC /* */, "MUL     ", mul},      // R(A) := RK(B) * RK(C)
+	opcode{0, 1, OpArgK, OpArgK, IABC /* */, "MOD     ", mod},      // R(A) := RK(B) % RK(C)
+	opcode{0, 1, OpArgK, OpArgK, IABC /* */, "POW     ", pow},      // R(A) := RK(B) ^ RK(C)
+	opcode{0, 1, OpArgK, OpArgK, IABC /* */, "DIV     ", div},      // R(A) := RK(B) / RK(C)
+	opcode{0, 1, OpArgK, OpArgK, IABC /* */, "IDIV    ", idiv},     // R(A) := RK(B) // RK(C)
+	opcode{0, 1, OpArgK, OpArgK, IABC /* */, "BAND    ", band},     // R(A) := RK(B) & RK(C)
+	opcode{0, 1, OpArgK, OpArgK, IABC /* */, "BOR     ", bor},      // R(A) := RK(B) | RK(C)
+	opcode{0, 1, OpArgK, OpArgK, IABC /* */, "BXOR    ", bxor},     // R(A) := RK(B) ~ RK(C)
+	opcode{0, 1, OpArgK, OpArgK, IABC /* */, "SHL     ", shl},      // R(A) := RK(B) << RK(C)
+	opcode{0, 1, OpArgK, OpArgK, IABC /* */, "SHR     ", shr},      // R(A) := RK(B) >> RK(C)
+	opcode{0, 1, OpArgR, OpArgN, IABC /* */, "UNM     ", unm},      // R(A) := -R(B)
+	opcode{0, 1, OpArgR, OpArgN, IABC /* */, "BNOT    ", bnot},     // R(A) := ~R(B)
+	opcode{0, 1, OpArgR, OpArgN, IABC /* */, "NOT     ", not},      // R(A) := not R(B)
+	opcode{0, 1, OpArgR, OpArgN, IABC /* */, "LEN     ", length},   // R(A) := length of R(B)
+	opcode{0, 1, OpArgR, OpArgR, IABC /* */, "CONCAT  ", concat},   // R(A) := R(B).. ... ..R(C)
+	opcode{0, 0, OpArgR, OpArgN, IAsBx /**/, "JMP     ", jmp},      // pc+=sBx; if (A) close all upvalues >= R(A - 1)
+	opcode{1, 0, OpArgK, OpArgK, IABC /* */, "EQ      ", eq},       // if ((RK(B) == RK(C)) ~= A) then pc++
+	opcode{1, 0, OpArgK, OpArgK, IABC /* */, "LT      ", lt},       // if ((RK(B) <  RK(C)) ~= A) then pc++
+	opcode{1, 0, OpArgK, OpArgK, IABC /* */, "LE      ", le},       // if ((RK(B) <= RK(C)) ~= A) then pc++
+	opcode{1, 0, OpArgN, OpArgU, IABC /* */, "TEST    ", test},     // if not (R(A) <=> C) then pc++
+	opcode{1, 1, OpArgR, OpArgU, IABC /* */, "TESTSET ", testSet},  // if (R(B) <=> C) then R(A) := R(B) else pc++
+	opcode{0, 1, OpArgU, OpArgU, IABC /* */, "CALL    ", nil},      // R(A), ... ,R(A+C-2) := R(A)(R(A+1), ... ,R(A+B-1))
+	opcode{0, 1, OpArgU, OpArgU, IABC /* */, "TAILCALL", nil},      // return R(A)(R(A+1), ... ,R(A+B-1))
+	opcode{0, 0, OpArgU, OpArgN, IABC /* */, "RETURN  ", nil},      // return R(A), ... ,R(A+B-2)
+	opcode{0, 1, OpArgR, OpArgN, IAsBx /**/, "FORLOOP ", forLoop},  // R(A)+=R(A+2); if R(A) <?= R(A+1) then { pc+=sBx; R(A+3)=R(A) }
+	opcode{0, 1, OpArgR, OpArgN, IAsBx /**/, "FORPREP ", forPrep},  // R(A)-=R(A+2); pc+=sBx
+	opcode{0, 0, OpArgN, OpArgU, IABC /* */, "TFORCALL", nil},      // R(A+3), ... ,R(A+2+C) := R(A)(R(A+1), R(A+2));
+	opcode{0, 1, OpArgR, OpArgN, IAsBx /**/, "TFORLOOP", nil},      // if R(A+1) ~= nil then { R(A)=R(A+1); pc += sBx }
+	opcode{0, 0, OpArgU, OpArgU, IABC /* */, "SETLIST ", nil},      // R(A)[(C-1)*FPF+i] := R(A+i), 1 <= i <= B
+	opcode{0, 1, OpArgU, OpArgN, IABx /* */, "CLOSURE ", nil},      // R(A) := closure(KPROTO[Bx])
+	opcode{0, 1, OpArgU, OpArgN, IABC /* */, "VARARG  ", nil},      // R(A), R(A+1), ..., R(A+B-2) = vararg
+	opcode{0, 0, OpArgU, OpArgU, IAx /*  */, "EXTRAARG", nil},      // extra (larger) argument for previous opcode
 }

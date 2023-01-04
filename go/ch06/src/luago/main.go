@@ -15,6 +15,8 @@ func main() {
 			test.TestStack()
 		case "3":
 			test.TestArith()
+		case "4":
+			test_vm()
 		}
 	}
 }
@@ -28,5 +30,17 @@ func test_luac() {
 		}
 
 		test.TestUndump(data)
+	}
+}
+
+func test_vm() {
+	if len(os.Args) > 2 {
+		data, err := ioutil.ReadFile(os.Args[2])
+
+		if err != nil {
+			panic(err)
+		}
+
+		test.TestVM(data)
 	}
 }
