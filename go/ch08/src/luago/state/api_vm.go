@@ -10,23 +10,23 @@
 package state
 
 func (self *luaState) PC() int {
-	return self.pc
+	return self.stack.pc
 }
 
 func (self *luaState) AddPC(n int) {
-	self.pc += n
+	self.stack.pc += n
 }
 
 // 根据PC索引从函数原型的指令表里取出当前指令，然后把PC加1，这样下次再调用该方法取出的就是下一条指令
 func (self *luaState) Fetch() uint32 {
-	i := self.proto.Code[self.pc]
-	self.pc++
+	i := self.stack.closure.proto.Code[self.stack.pc]
+	self.stack.pc++
 	return i
 }
 
 // 根据索引从函数原型的常量表里取出一个常量值，然后把它推入栈顶
 func (self *luaState) GetConst(idx int) {
-	c := self.proto.Constants[idx]
+	c := self.stack.closure.proto.Constants[idx]
 	self.stack.push(c)
 }
 

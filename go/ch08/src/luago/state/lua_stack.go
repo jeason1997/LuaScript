@@ -17,8 +17,15 @@ package state
  *top = 4
  */
 type luaStack struct {
+	/* 虚拟栈 */
 	slots []luaValue
 	top   int //栈顶索引，Lua从1开始
+	/* 函数调用信息 */
+	closure *closure   //闭包（函数原型）
+	varargs []luaValue //变长参数列表
+	pc      int        //程序指令地址
+	/* 调用栈链接列表 */
+	prev *luaStack //调用栈的上一个调用帧
 }
 
 //创建指定容量的栈
@@ -46,6 +53,22 @@ func (self *luaStack) push(val luaValue) {
 	self.top++
 }
 
+//往栈顶推入多个值（多退少补）
+func (self *luaStack) pushN(vals []luaValue, n int) {
+	nVals := len(vals)
+	if n < 0 {
+		n = nVals
+	}
+	for i := 0; i < n; i++ {
+		if i < nVals {
+			self.push(vals[i])
+		} else {
+			//如果n大于vals的长度，则后面都用nil补充
+			self.push(nil)
+		}
+	}
+}
+
 //从栈顶弹出一个值
 func (self *luaStack) pop() luaValue {
 	if self.top < 1 {
@@ -55,6 +78,15 @@ func (self *luaStack) pop() luaValue {
 	val := self.slots[self.top]
 	self.slots[self.top] = nil
 	return val
+}
+
+//从栈顶一次性弹出多个值
+func (self *luaStack) popN(n int) []luaValue {
+	vals := make([]luaValue, n)
+	for i := n - 1; i >= 0; i-- {
+		vals[i] = self.pop()
+	}
+	return vals
 }
 
 //把索引转换成绝对索引（并没有考虑索引是否有效）
@@ -98,4 +130,21 @@ func (self *luaStack) reverse(from, to int) {
 		from++
 		to--
 	}
+}
+
+//压入一个调用帧
+func (self *luaState) pushLuaStack(stack *luaStack) {
+	//使用单向链表的方式实现函数调用栈
+	//往栈顶推入一个调用帧相当于在链表头部插入一个节点，并让这个节点成为新的头部
+	stack.prev = self.stack
+	self.stack = stack
+}
+
+//从栈顶弹出一个调用帧
+func (self *luaState) popLuaStack() {
+	stack := self.stack
+	//将栈顶帧改为链接的上一个调用帧
+	self.stack = stack.prev
+	//原栈顶帧断开连接
+	stack.prev = nil
 }

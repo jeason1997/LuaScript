@@ -48,6 +48,7 @@ type header struct {
 }
 
 //函数原型定义，其中行号表，局部变量表，Upvalue名列表都属于调试信息，可以不需要
+//函数原型就相当于面向对象语言里的类，其作用是实例化出真正可执行的函数，也就是闭包。
 type Prototype struct {
 	Source          string        //源文件名，只有主函数有值
 	LineDefined     uint32        //起始行号，主函数为0

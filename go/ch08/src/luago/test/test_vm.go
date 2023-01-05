@@ -9,6 +9,7 @@ import (
 )
 
 func TestVM(data []byte) {
+	//加载预编译的二进制chunk文件，并解析出函数原型并执行其中的指令
 	proto := binchunk.Undump(data)
 	//编译的时候会自动计算运行需要的最大寄存器数量
 	nRegs := int(proto.MaxStackSize)
