@@ -29,7 +29,7 @@
             "args": ["3"]
         },
         {
-            "name": "4.测试虚拟机",
+            "name": "4.测试虚拟机运行luac文件",
             "type": "go",
             "request": "launch",
             "mode": "debug",

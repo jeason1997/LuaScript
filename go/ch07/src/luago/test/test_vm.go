@@ -1,4 +1,4 @@
-// 测试虚拟机
+// 测试虚拟机运行Luac文件
 package test
 
 import (

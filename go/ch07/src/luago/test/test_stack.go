@@ -31,6 +31,7 @@ func TestStack() {
 
 func printStack(ls LuaState) {
 	top := ls.GetTop()
+
 	for i := 1; i <= top; i++ {
 		t := ls.Type(i)
 		switch t {
