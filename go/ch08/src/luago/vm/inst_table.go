@@ -74,9 +74,16 @@ func setList(i Instruction, vm LuaVM) {
 		c = Instruction(vm.Fetch()).Ax()
 	}
 
+	bIsZero := b == 0
+	if bIsZero {
+		b = int(vm.ToInteger((-1))) - a - 1
+		vm.Pop(1)
+	}
+
 	//数组的起始位置：因为C操作数只有9个比特（512），所以直接用它表示数组索引显然不够用。
 	//这里的解决办法是让C操作数保存批次数，然后用批次数乘上批大小（对应伪代码中的FPF）就可以算出数组起始索引。
 	//以默认的批大小50为例，C操作数能表示的最大索引就是扩大到了25600（50*512）。
+	vm.CheckStack(1)
 	idx := int64(c * LFIELDS_PER_FLUSH)
 	for j := 1; j <= b; j++ {
 		idx++
@@ -84,5 +91,16 @@ func setList(i Instruction, vm LuaVM) {
 		vm.PushValue(a + j)
 		//将栈顶的值写入到table的idx位置
 		vm.SetI(a, idx)
+	}
+
+	if bIsZero {
+		for j := vm.RegisterCount() + 1; j <= vm.GetTop(); j++ {
+			idx++
+			vm.PushValue(j)
+			vm.SetI(a, idx)
+		}
+
+		// clear stack
+		vm.SetTop(vm.RegisterCount())
 	}
 }

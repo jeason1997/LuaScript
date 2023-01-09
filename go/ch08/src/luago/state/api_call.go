@@ -54,7 +54,7 @@ func (self *luaState) callLuaClosure(nArgs, nResults int, c *closure) {
 	newStack := newLuaStack(nRegs + 20)
 	newStack.closure = c
 
-	//把函数和参数值一次性从栈顶弹出，然后调用新帧的pushN()方法按照固定参数数量传入参数
+	//把函数和参数值一次性从栈顶弹出，然后调用新帧的pushN()方法按照固定参数数量传入参数（传入参数其实也相当于新函数的局部变量）
 	funcAndArgs := self.stack.popN(nArgs + 1)
 	newStack.pushN(funcAndArgs[1:], nParams)
 	//固定参数传递完毕之后，需要修改新帧的栈顶指针，让它指向最后一个寄存器
