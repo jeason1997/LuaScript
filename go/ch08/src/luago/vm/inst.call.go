@@ -23,6 +23,11 @@ func self(i Instruction, vm LuaVM) {
 	vm.GetTable(b)
 	//用栈顶的函数覆盖寄存器a处的值
 	vm.Replace(a)
+
+	/*
+	 *所以最终寄存器的状态就是 [...]->[a:函数闭包]->[a+1:obj]->[...]
+	 *obj:f(a, b, c)跟obj.f(obj, a, b, c)对比，最终栈里的样子是完全一模一样的。
+	 */
 }
 
 /*
@@ -44,6 +49,7 @@ func closure(i Instruction, vm LuaVM) {
 
 /*
  *VARARG指令（iABC模式）把传递给当前函数的变长参数加载到连续多个寄存器中。
+ *传递给函数的变长参数一开始是存在调用帧里的，stack.varargs，有需要的时候才突入到栈里
  *其中第一个寄存器的索引由操作数A指定，寄存器数量由操作数B指定
  *R(A), R(A+1), ..., R(A+B-2) = vararg
  */
