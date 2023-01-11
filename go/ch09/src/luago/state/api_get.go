@@ -51,3 +51,9 @@ func (self *luaState) getTable(t, k luaValue) LuaType {
 	}
 	panic("not a table! ")
 }
+
+//把全局环境中的某个字段（名字由参数指定）推入栈顶
+func (self *luaState) GetGlobal(name string) LuaType {
+	t := self.registry.get(LUA_RIDX_GLOBALS)
+	return self.getTable(t, name)
+}

@@ -38,3 +38,8 @@ const (
 	LUA_OPLT        // <
 	LUA_OPLE        // <=
 )
+
+const LUA_MINSTACK = 20                         //LUA调用栈最小容量
+const LUAI_MAXSTACK = 1000000                   //LUA调用栈最大容量（可正负）
+const LUA_REGISTRYINDEX = -LUAI_MAXSTACK - 1000 //负有效索引减1000就是注册表的伪索引
+const LUA_RIDX_GLOBALS int64 = 2                //全局环境在注册表里的索引

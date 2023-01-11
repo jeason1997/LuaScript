@@ -84,4 +84,11 @@ type LuaState interface {
 	PushGoFunction(f GoFunction)     //接收一个Go函数参数，把它转变成Go闭包后推入栈顶
 	IsGoFunction(idx int) bool       //判断指定索引处的值是否可以转换为Go函数
 	ToGoFunction(idx int) GoFunction //把指定索引处的值转换为Go函数并返回，如果值无法转换为Go函数，返回nil
+
+	/* api_push.go & api_get & api_set：全局环境的操作 */
+
+	PushGlobalTable()                   //把全局环境推入栈顶以备后续操作使用
+	GetGlobal(name string) LuaType      //把全局环境中的某个字段（名字由参数指定）推入栈顶
+	SetGlobal(name string)              //往全局环境里写入一个值，其中字段名由参数指定，值从栈顶弹出
+	Register(name string, f GoFunction) //用于给全局环境注册Go函数值
 }

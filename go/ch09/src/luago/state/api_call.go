@@ -2,6 +2,7 @@ package state
 
 import (
 	"fmt"
+	. "luago/api"
 	"luago/binchunk"
 	debugger "luago/utils"
 	"luago/vm"
@@ -58,7 +59,7 @@ func (self *luaState) callLuaClosure(nArgs, nResults int, c *closure) {
 	isVararg := c.proto.IsVararg == 1
 
 	//根据寄存器数量（适当扩大，因为要给指令实现函数预留少量栈空间）创建一个新的调用帧，并把闭包和调用帧联系起来
-	newStack := newLuaStack(nRegs + 20)
+	newStack := newLuaStack(nRegs+LUA_MINSTACK, self)
 	newStack.closure = c
 
 	//把函数和参数值一次性从栈顶弹出，然后调用新帧的pushN()方法按照固定参数数量传入参数（传入参数其实也相当于新函数的局部变量）
@@ -103,7 +104,7 @@ func (self *luaState) runLuaClosure() {
 }
 
 func (self *luaState) callGoClosure(nArgs, nResults int, c *closure) {
-	newStack := newLuaStack(nArgs + 20)
+	newStack := newLuaStack(nArgs+LUA_MINSTACK, self)
 	newStack.closure = c
 
 	//把参数值从主调帧里弹出，推入被调帧

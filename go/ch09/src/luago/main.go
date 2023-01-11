@@ -17,6 +17,8 @@ func main() {
 			test.TestArith()
 		case "4":
 			test_vm()
+		case "5":
+			test_go()
 		}
 	}
 }
@@ -42,5 +44,17 @@ func test_vm() {
 		}
 
 		test.TestVM(data, os.Args[2])
+	}
+}
+
+func test_go() {
+	if len(os.Args) > 2 {
+		data, err := ioutil.ReadFile(os.Args[2])
+
+		if err != nil {
+			panic(err)
+		}
+
+		test.TestGo(data, os.Args[2])
 	}
 }

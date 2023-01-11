@@ -1,5 +1,7 @@
 package state
 
+import . "luago/api"
+
 /*
  *栈容量：n
  *栈顶索引：top(0 < top <= n)
@@ -11,13 +13,16 @@ package state
  */
 
 /*
+ *Lua栈（调用帧），在执行Lua函数时，Lua栈充当虚拟寄存器以供指令操作。
+ *在调用Lua/Go函数时，Lua栈充当栈帧以供参数和返回值传递。
  *一个运行于虚拟机的正常栈，里面的结构应该是，底部是程序预留的寄存器（编译时自动计算最多需要多少个寄存器Prototype.MaxStackSize）。
  *上面剩余的是计算用到的栈空间，一般会预留几个。然后初始时栈顶索引是位于寄存器上面的，也就是计算栈的初始位置。
  *slots = [reg1][reg2][reg3][stack1][stack2][...]
  *top = 4
  */
 type luaStack struct {
-	/* 虚拟栈 */
+	state *luaState
+	/* 栈 */
 	slots []luaValue
 	top   int //栈顶索引，Lua从1开始
 	/* 函数调用信息 */
@@ -29,8 +34,9 @@ type luaStack struct {
 }
 
 //创建指定容量的栈
-func newLuaStack(size int) *luaStack {
+func newLuaStack(size int, state *luaState) *luaStack {
 	return &luaStack{
+		state: state,
 		slots: make([]luaValue, size),
 		top:   0,
 	}
@@ -91,6 +97,10 @@ func (self *luaStack) popN(n int) []luaValue {
 
 //把索引转换成绝对索引（并没有考虑索引是否有效）
 func (self *luaStack) absIndex(idx int) int {
+	//如果索引小于等于LUA_REGISTRYINDEX，说明是伪索引，直接返回即可
+	if idx <= LUA_REGISTRYINDEX {
+		return idx
+	}
 	if idx >= 0 {
 		return idx
 	}
@@ -99,12 +109,20 @@ func (self *luaStack) absIndex(idx int) int {
 
 //判断索引是否有效
 func (self *luaStack) isValid(idx int) bool {
+	//注册表伪索引属于有效索引，所以直接返回true
+	if idx == LUA_REGISTRYINDEX {
+		return true
+	}
 	absIdx := self.absIndex(idx)
 	return absIdx > 0 && absIdx <= self.top
 }
 
 //根据索引从栈里取值，如果索引无效则返回nil值
 func (self *luaStack) get(idx int) luaValue {
+	//如果索引是注册表伪索引，直接返回注册表
+	if idx == LUA_REGISTRYINDEX {
+		return self.state.registry
+	}
 	absIdx := self.absIndex(idx)
 	if absIdx > 0 && absIdx <= self.top {
 		return self.slots[absIdx-1]
@@ -114,6 +132,10 @@ func (self *luaStack) get(idx int) luaValue {
 
 //根据索引往栈里写入值，如果索引无效，则调用panic()函数终止程序
 func (self *luaStack) set(idx int, val luaValue) {
+	//如果索引是注册表伪索引，直接修改注册表
+	if idx == LUA_REGISTRYINDEX {
+		self.state.registry = val.(*luaTable)
+	}
 	absIdx := self.absIndex(idx)
 	if absIdx > 0 && absIdx <= self.top {
 		self.slots[absIdx-1] = val
