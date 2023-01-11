@@ -57,11 +57,14 @@ func vararg(i Instruction, vm LuaVM) {
 	a, b, _ := i.ABC()
 	a += 1
 
-	//起始寄存器索引A，结束寄存器索引：N=A+B-2
+	//起始寄存器索引：A
+	//结束寄存器索引：A+B-2
+	//寄存器数量：B-1
 	//如果B=1，则N=A-1，说明不返回参数，如果B=2，则N=A，说明返回一个参数，即A所处位置的值
 	if b != 1 {
-		//操作数B若大于1，表示把B -1个vararg参数复制到寄存器；否则只能等于0，表示把全部vararg参数复制到寄存器
+		//操作数B若大于1，表示把B-1个vararg参数复制到寄存器；否则只能等于0，表示把全部vararg参数复制到寄存器
 		vm.LoadVararg(b - 1)
+		//把栈顶的vararg参数复制到指定位置上
 		_popResults(a, b, vm)
 	}
 }
@@ -96,15 +99,21 @@ func call(i Instruction, vm LuaVM) {
 }
 
 //a:被调函数在寄存器的索引
-//b:需要传入的参数数量
+//b:决定传入的参数数量
 func _pushFuncAndArgs(a, b int, vm LuaVM) (nArgs int) {
+	//起始寄存器索引：A
+	//结束寄存器索引：A+B-2
+	//寄存器数量：B-1
+	//如果B=1，则N=A-1，说明不返回参数，如果B=2，则N=A，说明返回一个参数，即A所处位置的值
 	if b >= 1 {
 		vm.CheckStack(b)
+		//如果要传入的参数大于等于0的话，那么只需要把所需的参数依次压入栈顶
 		for i := a; i < a+b; i++ {
 			vm.PushValue(i)
 		}
 		return b - 1
 	} else {
+		//如果B=0，则说明需要把参数全部传入
 		_fixStack(a, vm)
 		return vm.GetTop() - vm.RegisterCount() - 1
 	}
@@ -121,15 +130,24 @@ func _fixStack(a int, vm LuaVM) {
 	vm.Rotate(vm.RegisterCount()+1, x-a)
 }
 
+//将当前栈顶的值弹出，覆盖到指定位置的寄存器上
 func _popResults(a, c int, vm LuaVM) {
+	//起始寄存器索引：A
+	//结束寄存器索引：A+C-2
+	//寄存器数量：C-1
+	//如果C=1，则N=A-1，说明不返回参数，如果C=2，则N=A，说明返回一个参数，即A所处位置的值
 	if c == 1 {
-		// no results
+		//不返回任何参数
 	} else if c > 1 {
+		//需要返回的参数数量：C-1
 		for i := a + c - 2; i >= a; i-- {
+			//将栈顶的值弹出，覆盖到指定位置寄存器
 			vm.Replace(i)
 		}
 	} else {
-		// leave results on stack
+		//如果C等于0，那么需要把被调函数的返回值全部返回
+		//把这些返回值先留在栈顶，反正后面也是要把它们再推入栈顶的。
+		//我们往栈顶推入一个整数值，标记这些返回值原本是要移动到哪些寄存器中
 		vm.CheckStack(1)
 		vm.PushInteger(int64(a))
 	}
@@ -145,12 +163,15 @@ func _return(i Instruction, vm LuaVM) {
 	a, b, _ := i.ABC()
 	a += 1
 
-	//起始寄存器索引A，结束寄存器索引：N=A+B-2
+	//起始寄存器索引：A
+	//结束寄存器索引：A+B-2
+	//寄存器数量：B-1
 	//如果B=1，则N=A-1，说明不返回参数，如果B=2，则N=A，说明返回一个参数，即A所处位置的值
 	if b == 1 {
-		// 如果操作数B等于1，N=A+B-2=A-1，则不需要返回任何值
+		//如果操作数B等于1，N=A+B-2=A-1，需要返回的数量为0，则不需要返回任何值
 	} else if b > 1 {
-		// 如果操作数B大于1，则需要返回B-1个值，这些值已经在寄存器里了，循环调用PushValue()方法复制到栈顶即可
+		//如果操作数B大于1，则需要返回B-1个值，这些值已经在寄存器里了，循环调用PushValue()方法复制到栈顶即可
+		//检查当前栈剩余空间是否能够放下B-1个返回值，不够则扩容
 		vm.CheckStack(b - 1)
 		for i := a; i <= a+b-2; i++ {
 			vm.PushValue(i)

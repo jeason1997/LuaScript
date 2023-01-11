@@ -3,6 +3,7 @@ package state
 import (
 	"fmt"
 	"luago/binchunk"
+	debugger "luago/utils"
 	"luago/vm"
 )
 
@@ -36,8 +37,7 @@ func (self *luaState) Call(nArgs, nResults int) {
 	//此时栈里的状态是，传参在栈顶，接下来是被调函数，因此可以通过栈顶减去参数的数量来获得被调函数的位置
 	val := self.stack.get(-(nArgs + 1))
 	if c, ok := val.(*closure); ok {
-		fmt.Printf("call %s<%d,%d>\n", c.proto.Source,
-			c.proto.LineDefined, c.proto.LastLineDefined)
+		fmt.Printf("call %s<%d,%d>\n", c.proto.Source, c.proto.LineDefined, c.proto.LastLineDefined)
 		self.callLuaClosure(nArgs, nResults, c)
 	} else {
 		panic("not function!")
@@ -86,10 +86,8 @@ func (self *luaState) runLuaClosure() {
 		inst := vm.Instruction(self.Fetch())
 		inst.Execute(self)
 
-		//打印调试信息
-		pc := self.PC()
-		fmt.Printf("[%02d] %s ", pc+1, inst.OpName())
-		//printStack(self)
+		debugger.PrintInstruction(self.PC(), inst)
+		debugger.PrintStack(self)
 
 		if inst.Opcode() == vm.OP_RETURN {
 			break

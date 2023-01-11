@@ -41,6 +41,6 @@ func test_vm() {
 			panic(err)
 		}
 
-		test.TestVM(data)
+		test.TestVM(data, os.Args[2])
 	}
 }

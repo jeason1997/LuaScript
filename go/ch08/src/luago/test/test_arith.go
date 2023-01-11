@@ -4,6 +4,7 @@ package test
 import (
 	. "luago/api"
 	"luago/state"
+	debugger "luago/utils"
 )
 
 func TestArith() {
@@ -12,16 +13,16 @@ func TestArith() {
 	ls.PushString("2.0")
 	ls.PushString("3.0")
 	ls.PushNumber(4.0)
-	printStack(ls)
+	debugger.PrintStack(ls)
 
 	ls.Arith(LUA_OPADD)
-	printStack(ls)
+	debugger.PrintStack(ls)
 	ls.Arith(LUA_OPBNOT)
-	printStack(ls)
+	debugger.PrintStack(ls)
 	ls.Len(2)
-	printStack(ls)
+	debugger.PrintStack(ls)
 	ls.Concat(3)
-	printStack(ls)
+	debugger.PrintStack(ls)
 	ls.PushBoolean(ls.Compare(1, 2, LUA_OPEQ))
-	printStack(ls)
+	debugger.PrintStack(ls)
 }
