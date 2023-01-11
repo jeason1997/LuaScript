@@ -1,8 +1,15 @@
 package api
 
-type LuaType = int   //数据类型
-type ArithOp = int   // 运算类型
-type CompareOp = int // 比较类型
+/*
+ *我们约定，Go函数必须满足这样的签名：接收一个LuaState接口类型的参数，返回一个整数。
+ *在Go函数开始执行之前，Lua栈里是传入的参数值，别无它值。
+ *当Go函数结束之后，把需要返回的值留在栈顶，然后返回一个整数表示返回值个数。
+ *由于Go函数返回了返回值数量，这样它在执行完毕时就不用对栈进行清理了，把返回值留在栈顶即可
+ */
+type GoFunction func(LuaState) int //Go函数类型
+type LuaType = int                 //数据类型
+type ArithOp = int                 //运算类型
+type CompareOp = int               //比较类型
 
 type LuaState interface {
 	/* api_stack.go：基础栈操作方法 */
@@ -67,8 +74,14 @@ type LuaState interface {
 	SetField(idx int, k string) //作用是把键值对写入表。其中键由参数传入（字符串），值从栈里弹出，表则位于指定索引处
 	SetI(idx int, n int64)      //作用是把键值对写入表。其中键由参数传入（整数），值从栈里弹出，表则位于指定索引处，用于按索引修改数组元素
 
-	/* api_call.go：chunk的加载与闭包的运行 */
+	/* api_call.go：LUA的加载与闭包的运行 */
 
 	Load(chunk []byte, chunkName, mode string) int //从资源加载主函数原型并压入栈顶（只有主函数需要从资源加载，子函数都包括在主函数里面了）
 	Call(nArgs, nResults int)                      //对Lua函数进行调用。在执行Call方法之前，必须先把被调函数推入栈顶，然后把参数值依次推入栈顶。方法结束之后，参数值和函数会被弹出栈顶，取而代之的是指定数量的返回值压入栈顶。
+
+	/* api_push.go & api_access：Go的转换与返回 */
+
+	PushGoFunction(f GoFunction)     //接收一个Go函数参数，把它转变成Go闭包后推入栈顶
+	IsGoFunction(idx int) bool       //判断指定索引处的值是否可以转换为Go函数
+	ToGoFunction(idx int) GoFunction //把指定索引处的值转换为Go函数并返回，如果值无法转换为Go函数，返回nil
 }

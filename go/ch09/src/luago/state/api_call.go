@@ -28,7 +28,7 @@ func (self *luaState) Load(chunk []byte, chunkName, mode string) int {
 }
 
 /*
- *对Lua函数进行调用。在执行Call()方法之前，必须先把被调函数推入栈顶，然后把参数值依次推入栈顶。
+ *对函数进行调用。在执行Call()方法之前，必须先把被调函数推入栈顶，然后把参数值依次推入栈顶。
  *Call()方法结束之后，参数值和函数会被弹出栈顶，取而代之的是指定数量的返回值压入栈顶。
  *nArgs：准备传递给被调函数的参数数量，同时也隐含给出了被调函数在栈里的位置
  *nResults：需要的返回值数量（多退少补），如果是-1，则被调函数的返回值会全部留在栈顶。
@@ -37,8 +37,15 @@ func (self *luaState) Call(nArgs, nResults int) {
 	//此时栈里的状态是，传参在栈顶，接下来是被调函数，因此可以通过栈顶减去参数的数量来获得被调函数的位置
 	val := self.stack.get(-(nArgs + 1))
 	if c, ok := val.(*closure); ok {
-		fmt.Printf("call %s<%d,%d>\n", c.proto.Source, c.proto.LineDefined, c.proto.LastLineDefined)
-		self.callLuaClosure(nArgs, nResults, c)
+		if c.proto != nil {
+			//如果Lua闭包不为空，则执行Lua调用
+			fmt.Printf("call %s<%d,%d>\n", c.proto.Source, c.proto.LineDefined, c.proto.LastLineDefined)
+			self.callLuaClosure(nArgs, nResults, c)
+		} else {
+			//否则，证明这是一个Go调用
+			self.callGoClosure(nArgs, nResults, c)
+		}
+
 	} else {
 		panic("not function!")
 	}
@@ -92,5 +99,30 @@ func (self *luaState) runLuaClosure() {
 		if inst.Opcode() == vm.OP_RETURN {
 			break
 		}
+	}
+}
+
+func (self *luaState) callGoClosure(nArgs, nResults int, c *closure) {
+	newStack := newLuaStack(nArgs + 20)
+	newStack.closure = c
+
+	//把参数值从主调帧里弹出，推入被调帧
+	args := self.stack.popN(nArgs)
+	newStack.pushN(args, nArgs)
+	//Go闭包直接从主调帧里弹出扔掉即可
+	self.stack.pop()
+
+	//把新调用帧推入调用栈顶，让它成为当前帧
+	self.pushLuaStack(newStack)
+	//执行Go函数，r表示Go函数返回参数的个数
+	r := c.goFunc(self)
+	//执行完毕之后把被调帧从调用栈里弹出，这样主调帧就又成了当前帧
+	self.popLuaStack()
+
+	if nResults != 0 {
+		//把返回值从被调帧里弹出，推入主调帧（多退少补）
+		results := newStack.popN(r)
+		self.stack.check(len(results))
+		self.stack.pushN(results, nResults)
 	}
 }

@@ -139,3 +139,21 @@ func (self *luaState) ToStringX(idx int) (string, bool) {
 		return "", false
 	}
 }
+
+// 判断指定索引处的值是否可以转换为Go函数
+func (self *luaState) IsGoFunction(idx int) bool {
+	val := self.stack.get(idx)
+	if c, ok := val.(*closure); ok {
+		return c.goFunc != nil
+	}
+	return false
+}
+
+// 把指定索引处的值转换为Go函数并返回，如果值无法转换为Go函数，返回nil
+func (self *luaState) ToGoFunction(idx int) GoFunction {
+	val := self.stack.get(idx)
+	if c, ok := val.(*closure); ok {
+		return c.goFunc
+	}
+	return nil
+}
