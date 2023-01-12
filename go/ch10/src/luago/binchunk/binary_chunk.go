@@ -66,8 +66,8 @@ type Prototype struct {
 }
 
 type Upvalue struct {
-	Instack byte
-	Idx     byte
+	Instack byte //Upvalue捕获的是否是直接外围函数的局部变量，1表示是，0表示否
+	Idx     byte //如果Upvalue捕获的是直接外围函数的局部变量，局部变量在外围函数调用帧里的索引
 }
 
 type LocVar struct {

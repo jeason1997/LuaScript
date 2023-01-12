@@ -16,7 +16,17 @@ func (self *luaState) PushBoolean(b bool)          { self.stack.push(b) }
 func (self *luaState) PushInteger(n int64)         { self.stack.push(n) }
 func (self *luaState) PushNumber(n float64)        { self.stack.push(n) }
 func (self *luaState) PushString(s string)         { self.stack.push(s) }
-func (self *luaState) PushGoFunction(f GoFunction) { self.stack.push(newGoClosure(f)) }
+func (self *luaState) PushGoFunction(f GoFunction) { self.stack.push(newGoClosure(f, 0)) }
+
+func (self *luaState) PushGoClosure(f GoFunction, n int) {
+	//先创建Go闭包，然后从栈顶弹出指定数量的值让它们变成闭包的Upvalue
+	closure := newGoClosure(f, n)
+	for i := n; i > 0; i-- {
+		val := self.stack.pop()
+		closure.upvals[n-1] = &upvalue{&val}
+	}
+	self.stack.push(closure)
+}
 
 //由于全局环境也只是个普通的Lua表，所以GetTable()和SetTable()等表操作方法也同样适用于它，
 //不过要使用这些方法，必须把全局环境预先放入栈里。

@@ -81,9 +81,10 @@ type LuaState interface {
 
 	/* api_push.go & api_access：Go的转换与返回 */
 
-	PushGoFunction(f GoFunction)     //接收一个Go函数参数，把它转变成Go闭包后推入栈顶
-	IsGoFunction(idx int) bool       //判断指定索引处的值是否可以转换为Go函数
-	ToGoFunction(idx int) GoFunction //把指定索引处的值转换为Go函数并返回，如果值无法转换为Go函数，返回nil
+	PushGoFunction(f GoFunction)       //接收一个Go函数参数，把它转变成Go闭包后推入栈顶
+	PushGoClosure(f GoFunction, n int) //先从栈顶弹出n个Lua值，这些值会成为Go闭包的Upvalue，接收一个Go函数参数，把它转变成Go闭包后推入栈顶
+	IsGoFunction(idx int) bool         //判断指定索引处的值是否可以转换为Go函数
+	ToGoFunction(idx int) GoFunction   //把指定索引处的值转换为Go函数并返回，如果值无法转换为Go函数，返回nil
 
 	/* api_push.go & api_get & api_set：全局环境的操作 */
 

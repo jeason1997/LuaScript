@@ -65,7 +65,45 @@ func (self *luaState) LoadVararg(n int) {
 
 //把当前Lua函数的子函数的原型实例化为闭包推入栈顶
 func (self *luaState) LoadProto(idx int) {
-	proto := self.stack.closure.proto.Protos[idx]
-	closure := newLuaClosure(proto)
-	self.stack.push(closure)
+	stack := self.stack
+	subProto := stack.closure.proto.Protos[idx]
+	closure := newLuaClosure(subProto)
+	stack.push(closure)
+
+	//加载子函数原型时也需要初始化Upvalue（主函数Main的Upvalue在Load程序的时候已经加载了）
+	for i, uvInfo := range subProto.Upvalues {
+		uvIdx := int(uvInfo.Idx)
+		if uvInfo.Instack == 1 {
+			//如果某一个Upvalue捕获的是当前函数的局部变量
+			//那么我们只要访问当前函数的局部变量即可
+
+			if stack.openuvs == nil {
+				stack.openuvs = map[int]*upvalue{}
+			}
+			if openuv, found := stack.openuvs[uvIdx]; found {
+				//如果Upvalue捕获的外围函数局部变量还在栈上，直接引用即可，我们称这种Upvalue处于开放（Open）状态
+				closure.upvals[i] = openuv
+			} else {
+				//反之，必须把变量的实际值保存在其他地方，我们称这种Upvalue处于闭合（Closed）状态
+				closure.upvals[i] = &upvalue{&stack.slots[uvIdx]}
+				//为了能够在合适的时机（比如局部变量退出作用域时）把处于开放状态的Upvalue闭合，
+				//需要记录所有暂时还处于开放状态的Upvalue，我们把这些Upvalue记录在被捕获局部变量所在的栈帧里
+				stack.openuvs[uvIdx] = closure.upvals[i]
+			}
+		} else {
+			//如果某一个Upvalue捕获的是更外围的函数中的局部变量
+			//该Upvalue已经被当前函数捕获，我们只要把该Upvalue传递给闭包即可
+			closure.upvals[i] = stack.closure.upvals[uvIdx]
+		}
+	}
+}
+
+func (self *luaState) CloseUpvalues(a int) {
+	for i, openuv := range self.stack.openuvs {
+		if i >= a-1 {
+			val := *openuv.val
+			openuv.val = &val
+			delete(self.stack.openuvs, i)
+		}
+	}
 }

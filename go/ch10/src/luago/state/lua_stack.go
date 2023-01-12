@@ -21,16 +21,17 @@ import . "luago/api"
  *top = 4
  */
 type luaStack struct {
-	state *luaState
-	/* 栈 */
-	slots []luaValue
-	top   int //栈顶索引，Lua从1开始
+	/* 虚拟栈 */
+	slots []luaValue //栈
+	top   int        //栈顶索引，Lua从1开始
 	/* 函数调用信息 */
-	closure *closure   //闭包（函数原型）
-	varargs []luaValue //变长参数列表
-	pc      int        //程序指令地址
+	state   *luaState        //解释器的引用
+	closure *closure         //闭包（函数原型）
+	varargs []luaValue       //变长参数列表
+	pc      int              //程序指令地址
+	openuvs map[int]*upvalue //key是寄存器索引，值是Upvalue指针
 	/* 调用栈链接列表 */
-	prev *luaStack //调用栈的上一个调用帧
+	prev *luaStack //调用帧的上一个调用帧
 }
 
 //创建指定容量的栈
@@ -113,6 +114,15 @@ func (self *luaStack) isValid(idx int) bool {
 	if idx == LUA_REGISTRYINDEX {
 		return true
 	}
+
+	//如果索引小于注册表索引，说明是Upvalue伪索引
+	if idx < LUA_REGISTRYINDEX {
+		//把它转成真实索引（从0开始）然后看它是否在有效范围之内
+		uvIdx := LUA_REGISTRYINDEX - idx - 1
+		c := self.closure
+		return c != nil && uvIdx < len(c.upvals)
+	}
+
 	absIdx := self.absIndex(idx)
 	return absIdx > 0 && absIdx <= self.top
 }
@@ -123,6 +133,18 @@ func (self *luaStack) get(idx int) luaValue {
 	if idx == LUA_REGISTRYINDEX {
 		return self.state.registry
 	}
+
+	//如果索引小于注册表索引，说明是Upvalue伪索引
+	if idx < LUA_REGISTRYINDEX {
+		uvIdx := LUA_REGISTRYINDEX - idx - 1
+		c := self.closure
+		//如果伪索引无效，直接返回nil，否则返回Upvalue值
+		if c == nil || uvIdx >= len(c.upvals) {
+			return nil
+		}
+		return *(c.upvals[uvIdx].val)
+	}
+
 	absIdx := self.absIndex(idx)
 	if absIdx > 0 && absIdx <= self.top {
 		return self.slots[absIdx-1]
@@ -136,6 +158,17 @@ func (self *luaStack) set(idx int, val luaValue) {
 	if idx == LUA_REGISTRYINDEX {
 		self.state.registry = val.(*luaTable)
 	}
+
+	//如果索引小于注册表索引，说明是Upvalue伪索引
+	if idx < LUA_REGISTRYINDEX {
+		uvIdx := LUA_REGISTRYINDEX - idx - 1
+		c := self.closure
+		//如果伪索引有效，我们就修改Upvalue值，否则直接返回
+		if c != nil && uvIdx < len(c.upvals) {
+			*(c.upvals[uvIdx].val) = val
+		}
+	}
+
 	absIdx := self.absIndex(idx)
 	if absIdx > 0 && absIdx <= self.top {
 		self.slots[absIdx-1] = val

@@ -3,7 +3,10 @@
  */
 package vm
 
-import . "luago/api"
+import (
+	. "luago/api"
+	. "luago/state"
+)
 
 /*
  *MOVE指令（iABC模式）把源寄存器（索引由操作数B指定）里的值移动到目标寄存器（索引由操作数A指定）里
@@ -31,6 +34,6 @@ func jmp(i Instruction, vm LuaVM) {
 	vm.AddPC(sBx)
 	if a != 0 {
 		//JMP指令的操作数A和Upvalue有关
-		panic("todo! ")
+		vm.CloseUpvalues(a)
 	}
 }
