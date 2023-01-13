@@ -50,9 +50,9 @@ func (self *luaState) Call(nArgs, nResults int) {
 	if c, ok := val.(*closure); ok {
 		if c.proto != nil {
 			//如果Lua闭包不为空，则执行Lua调用
-			absIdx := self.stack.absIndex(-(nArgs + 1))
-			funName := c.proto.Constants[absIdx-self.stack.top]
-			fmt.Printf("lua call %s<%d,%d> %s\n", c.proto.Source, c.proto.LineDefined, c.proto.LastLineDefined, funName)
+			//absIdx := self.stack.absIndex(-(nArgs + 1))
+			//funName := c.proto.Constants[absIdx-self.stack.top]
+			//fmt.Printf("lua call %s<%d,%d> %s\n", c.proto.Source, c.proto.LineDefined, c.proto.LastLineDefined, funName)
 			self.callLuaClosure(nArgs, nResults, c)
 		} else {
 			//否则，证明这是一个Go调用
