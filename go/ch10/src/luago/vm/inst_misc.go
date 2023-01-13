@@ -5,7 +5,6 @@ package vm
 
 import (
 	. "luago/api"
-	. "luago/state"
 )
 
 /*

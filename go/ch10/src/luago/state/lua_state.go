@@ -50,9 +50,3 @@ func (self *luaState) popLuaStack() {
 	//原栈顶帧断开连接
 	stack.prev = nil
 }
-
-//对于任何一个Upvalue索引，用注册表伪索引减去该索引就可以得到对应的Upvalue伪索引
-//在Lua虚拟机指令的操作数里，Upvalue索引是从0开始的，但是在转换成Lua栈伪索引时，Upvalue指令是从1开始的
-func LuaUpvalueIndex(i int) int {
-	return LUA_REGISTRYINDEX - i
-}

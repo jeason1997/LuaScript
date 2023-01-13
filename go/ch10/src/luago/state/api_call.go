@@ -4,7 +4,7 @@ import (
 	"fmt"
 	. "luago/api"
 	"luago/binchunk"
-	debugger "luago/utils"
+	"luago/utils"
 	"luago/vm"
 )
 
@@ -50,13 +50,15 @@ func (self *luaState) Call(nArgs, nResults int) {
 	if c, ok := val.(*closure); ok {
 		if c.proto != nil {
 			//如果Lua闭包不为空，则执行Lua调用
-			fmt.Printf("call %s<%d,%d>\n", c.proto.Source, c.proto.LineDefined, c.proto.LastLineDefined)
+			absIdx := self.stack.absIndex(-(nArgs + 1))
+			funName := c.proto.Constants[absIdx-self.stack.top]
+			fmt.Printf("lua call %s<%d,%d> %s\n", c.proto.Source, c.proto.LineDefined, c.proto.LastLineDefined, funName)
 			self.callLuaClosure(nArgs, nResults, c)
 		} else {
 			//否则，证明这是一个Go调用
+			fmt.Printf("go call %s\n", utils.GetFunctionName(c.goFunc))
 			self.callGoClosure(nArgs, nResults, c)
 		}
-
 	} else {
 		panic("not function!")
 	}
@@ -104,8 +106,8 @@ func (self *luaState) runLuaClosure() {
 		inst := vm.Instruction(self.Fetch())
 		inst.Execute(self)
 
-		debugger.PrintInstruction(self.PC(), inst)
-		debugger.PrintStack(self)
+		utils.PrintInstruction(self.PC(), inst)
+		utils.PrintStack(self)
 
 		if inst.Opcode() == vm.OP_RETURN {
 			break

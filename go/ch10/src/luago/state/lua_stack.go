@@ -157,6 +157,7 @@ func (self *luaStack) set(idx int, val luaValue) {
 	//如果索引是注册表伪索引，直接修改注册表
 	if idx == LUA_REGISTRYINDEX {
 		self.state.registry = val.(*luaTable)
+		return
 	}
 
 	//如果索引小于注册表索引，说明是Upvalue伪索引
@@ -167,6 +168,7 @@ func (self *luaStack) set(idx int, val luaValue) {
 		if c != nil && uvIdx < len(c.upvals) {
 			*(c.upvals[uvIdx].val) = val
 		}
+		return
 	}
 
 	absIdx := self.absIndex(idx)
