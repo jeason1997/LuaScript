@@ -21,9 +21,9 @@ import (
  *如果表的键是连续的正整数，那么哈希表就是空的，值全部按索引存储在数组里。
  */
 type luaTable struct {
-	arr []luaValue
-	//由于map是Go语言关键字，不能用来命名字段，所以加了下划线
-	_map map[luaValue]luaValue
+	metatable *luaTable             //原表：每一个表都可以拥有自己的元表，其他值则是每种类型共享一个元表
+	arr       []luaValue            //数组
+	_map      map[luaValue]luaValue //哈希表：由于map是Go语言关键字，不能用来命名字段，所以加了下划线
 }
 
 // 该函数接受两个参数，用于预估表的用途和容量。

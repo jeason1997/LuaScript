@@ -35,26 +35,27 @@ var (
 )
 
 type operator struct {
+	metamethod  string                         //元方法运算
 	integerFunc func(int64, int64) int64       //整数运算
 	floatFunc   func(float64, float64) float64 //浮点数运算
 }
 
 // 与consts.go里定义的LUA运算类型一一对应
 var operators = []operator{
-	operator{iadd, fadd},   // +
-	operator{isub, fsub},   // -
-	operator{imul, fmul},   // ＊
-	operator{imod, fmod},   // %
-	operator{nil, pow},     // ^
-	operator{nil, div},     // /
-	operator{iidiv, fidiv}, // //
-	operator{band, nil},    // &
-	operator{bor, nil},     // |
-	operator{bxor, nil},    // ～
-	operator{shl, nil},     // <<
-	operator{shr, nil},     // >>
-	operator{iunm, funm},   // - (一元取反)
-	operator{bnot, nil},    // ～
+	operator{"__add", iadd, fadd},
+	operator{"__sub", isub, fsub},
+	operator{"__mul", imul, fmul},
+	operator{"__mod", imod, fmod},
+	operator{"__pow", nil, pow},
+	operator{"__div", nil, div},
+	operator{"__idiv", iidiv, fidiv},
+	operator{"__band", band, nil},
+	operator{"__bor", bor, nil},
+	operator{"__bxor", bxor, nil},
+	operator{"__shl", shl, nil},
+	operator{"__shr", shr, nil},
+	operator{"__unm", iunm, funm},
+	operator{"__bnot", bnot, nil},
 }
 
 // 从栈顶取出操作数，按照一定规则运算，并将结果压回栈顶
@@ -72,12 +73,23 @@ func (self *luaState) Arith(op ArithOp) {
 	}
 
 	operator := operators[op]
+
+	//如果操作数都是（或者可以转换为）数字，则执行正常的算术运算逻辑
 	if result := _arith(a, b, operator); result != nil {
 		//将运算结果压入栈顶
 		self.stack.push(result)
-	} else {
-		panic("arithmetic error! ")
+		return
 	}
+
+	//否则尝试查找并执行算术元方法
+	mm := operator.metamethod
+	if result, ok := callMetamethod(a, b, mm, self); ok {
+		self.stack.push(result)
+		return
+	}
+
+	//如果找不到相应的元方法，则调用panic()函数汇报错误
+	panic("arithmetic error!")
 }
 
 func _arith(a, b luaValue, op operator) luaValue {
