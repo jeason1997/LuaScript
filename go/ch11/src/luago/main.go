@@ -10,20 +10,22 @@ func main() {
 	if len(os.Args) > 1 {
 		switch os.Args[1] {
 		case "1":
-			test_luac()
+			test.TestUndump(load_lua_data())
 		case "2":
 			test.TestStack()
 		case "3":
 			test.TestArith()
 		case "4":
-			test_vm()
+			test.TestVM(load_lua_data(), os.Args[2])
 		case "5":
-			test_go()
+			test.TestGo(load_lua_data(), os.Args[2])
+		case "6":
+			test.TestMetatable(load_lua_data(), os.Args[2])
 		}
 	}
 }
 
-func test_luac() {
+func load_lua_data() []byte {
 	if len(os.Args) > 2 {
 		data, err := ioutil.ReadFile(os.Args[2])
 
@@ -31,30 +33,7 @@ func test_luac() {
 			panic(err)
 		}
 
-		test.TestUndump(data)
+		return data
 	}
-}
-
-func test_vm() {
-	if len(os.Args) > 2 {
-		data, err := ioutil.ReadFile(os.Args[2])
-
-		if err != nil {
-			panic(err)
-		}
-
-		test.TestVM(data, os.Args[2])
-	}
-}
-
-func test_go() {
-	if len(os.Args) > 2 {
-		data, err := ioutil.ReadFile(os.Args[2])
-
-		if err != nil {
-			panic(err)
-		}
-
-		test.TestGo(data, os.Args[2])
-	}
+	return nil
 }

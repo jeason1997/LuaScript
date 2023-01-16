@@ -47,7 +47,29 @@ func (self *luaState) Load(chunk []byte, chunkName, mode string) int {
 func (self *luaState) Call(nArgs, nResults int) {
 	//此时栈里的状态是，传参在栈顶，接下来是被调函数，因此可以通过栈顶减去参数的数量来获得被调函数的位置
 	val := self.stack.get(-(nArgs + 1))
-	if c, ok := val.(*closure); ok {
+
+	//判断是否为闭包
+	c, ok := val.(*closure)
+
+	/*
+	 *非闭包调用
+	 *当我们试图调用一个非函数类型的值时，比如"obj = {}; obj();"，Lua会看这个值是否有__call元方法，
+	 *如果有，Lua会以该值为第一个参数，后跟原方法调用的其他参数，来调用元方法，以元方法返回值为返回值
+	 */
+	if !ok {
+		if mf := getMetafield(val, "__call", self); mf != nil {
+			//判断该值的__call元方法是否为一个闭包
+			if c, ok = mf.(*closure); ok {
+				//如果是闭包的话，将该值插入到第一个参数
+				self.stack.push(val)
+				self.Insert(-(nArgs + 2))
+				nArgs += 1
+			}
+		}
+	}
+
+	//闭包函数调用
+	if ok {
 		if c.proto != nil {
 			//如果Lua闭包不为空，则执行Lua调用
 			//absIdx := self.stack.absIndex(-(nArgs + 1))

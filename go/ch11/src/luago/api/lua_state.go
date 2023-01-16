@@ -63,22 +63,30 @@ type LuaState interface {
 
 	Arith(op ArithOp)                          //从栈顶取出操作数，按照一定规则运算，并将结果压回栈顶
 	Compare(idx1, idx2 int, op CompareOp) bool //对指定索引处的两个值进行比较，返回结果。该方法不改变栈的状态
-	Len(idx int)                               //访问指定索引处的值，取其长度，然后推入栈顶
 	Concat(n int)                              //从栈顶弹出n个值，对这些值进行拼接，然后把结果推入栈顶
+	Len(idx int)                               //访问指定索引处的值，取其长度，然后推入栈顶
+	RawLen(idx int) uint
+	RawEqual(idx1, idx2 int) bool
 
 	/* api_get.go：Table访问方法 (Lua -> stack) */
 
 	NewTable()                          //创建一个空表
 	CreateTable(nArr, nRec int)         //创建一个表并推入栈顶
 	GetTable(idx int) LuaType           //根据键（从栈顶弹出）从表（索引由参数指定）里取值，然后把值推入栈顶并返回值的类型
+	RawGet(idx int) LuaType             //GetTable的忽略元方法版本
 	GetField(idx int, k string) LuaType //根据键（字符串参数）从表（索引由参数指定）里取值，然后把值推入栈顶并返回值的类型
 	GetI(idx int, i int64) LuaType      //根据键（数字参数）从表（索引由参数指定）里取值，然后把值推入栈顶并返回值的类型，该方法是专门给数组准备的
+	RawGetI(idx int, i int64) LuaType   //GeI的忽略元方法版本
+	GetMetatable(idx int) bool          //看指定索引处的值是否有元表，如果有，则把元表推入栈顶并返回true；否则栈的状态不改变，返回false。
 
 	/* api_set.go：Table修改方法 (stack -> Lua) */
 
 	SetTable(idx int)           //作用是把键值对写入表。其中键和值从栈里弹出，表则位于指定索引处
+	RawSet(idx int)             //SetTable的忽略元方法版本
 	SetField(idx int, k string) //作用是把键值对写入表。其中键由参数传入（字符串），值从栈里弹出，表则位于指定索引处
 	SetI(idx int, n int64)      //作用是把键值对写入表。其中键由参数传入（整数），值从栈里弹出，表则位于指定索引处，用于按索引修改数组元素
+	RawSetI(idx int, i int64)   //SetI的忽略元方法版本
+	SetMetatable(idx int)       //从栈顶弹出一个表，然后把指定索引处值的元表设置成该表
 
 	/* api_call.go：LUA的加载与闭包的运行 */
 

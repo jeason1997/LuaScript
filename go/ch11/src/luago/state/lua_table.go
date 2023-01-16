@@ -142,3 +142,9 @@ func (self *luaTable) _expandArray() {
 		}
 	}
 }
+
+// 判断Table是否存在某个元方法
+func (self *luaTable) hasMetafield(fieldName string) bool {
+	return self.metatable != nil &&
+		self.metatable.get(fieldName) != nil
+}

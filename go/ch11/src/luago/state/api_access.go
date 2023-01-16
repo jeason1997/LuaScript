@@ -25,6 +25,18 @@ import (
 	. "luago/api"
 )
 
+func (self *luaState) RawLen(idx int) uint {
+	val := self.stack.get(idx)
+	switch x := val.(type) {
+	case string:
+		return uint(len(x))
+	case *luaTable:
+		return uint(x.len())
+	default:
+		return 0
+	}
+}
+
 func (self *luaState) TypeName(tp LuaType) string {
 	switch tp {
 	case LUA_TNONE:

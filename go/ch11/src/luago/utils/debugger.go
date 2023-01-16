@@ -10,7 +10,13 @@ import (
 	"strings"
 )
 
+var OpenDebug = true
+
 func PrintHeader(f *binchunk.Prototype) {
+	if !OpenDebug {
+		return
+	}
+
 	funcType := "main"
 	if f.LineDefined > 0 {
 		funcType = "function"
@@ -32,6 +38,10 @@ func PrintHeader(f *binchunk.Prototype) {
 }
 
 func PrintCode(f *binchunk.Prototype) {
+	if !OpenDebug {
+		return
+	}
+
 	for pc, c := range f.Code {
 		line := "-"
 		if len(f.LineInfo) > 0 {
@@ -46,10 +56,18 @@ func PrintCode(f *binchunk.Prototype) {
 }
 
 func PrintInstruction(pc int, inst Instruction) {
+	if !OpenDebug {
+		return
+	}
+
 	fmt.Printf("[%02d] %s ", pc+1, inst.OpName())
 }
 
 func PrintDetail(f *binchunk.Prototype) {
+	if !OpenDebug {
+		return
+	}
+
 	fmt.Printf("constants (%d):\n", len(f.Constants))
 	for i, k := range f.Constants {
 		fmt.Printf("\t%d\t%s\n", i+1, constantToString(k))
@@ -140,6 +158,10 @@ func printOperands(i Instruction) {
 }
 
 func PrintStack(ls LuaState) {
+	if !OpenDebug {
+		return
+	}
+
 	top := ls.GetTop()
 
 	for i := 1; i <= top; i++ {
